@@ -1,19 +1,17 @@
 const { Octokit } = require("@octokit/core");
 const express = require('express');
-const axios = require('axios');
 const router = express.Router();
+
+const { getToken, getUser, postGist } = require("../services/github");
 
 require('dotenv').config();
 
 router.get('/token', async (req, res, next) => {
     try {
         const code = req.query.code;
-        const tokenCall = await axios.get(
-            `https://github.com/login/oauth/access_token?client_id=${process.env.GITHUB_CLIENT_ID}&client_secret=${process.env.GITHUB_CLIENT_SECRET}&code=${code}`,
-        );
-        const tokens = new URLSearchParams(tokenCall.data);
-        if (tokens.get('access_token')) {
-            res.status(200).json({ token: tokens.get('access_token') });
+        const token = await getToken(code);
+        if (token !== '') {
+            res.status(200).json({ token });
             return;
         }
         res.status(404).json({ message: 'Incorrect code' });
@@ -26,7 +24,7 @@ router.get('/user', async (req, res, next) => {
     const token = req.query.token;
     const octokit = new Octokit({ auth: token });
     try {
-        const result = await octokit.request('GET /user');
+        const result = await getUser(octokit);
         res.status(200).json({ user: result });
     } catch (error) {
         res.status(404).json({ message: 'Cannot get the user' });
@@ -47,7 +45,7 @@ router.post('/gist', async (req, res, next) => {
         },
     };
     try {
-        const result = await octokit.request('POST /gists', body);
+        const result = await postGist(body, octokit);
         if (result.status === 201) {
             res.status(201).json({ result });
             return;
