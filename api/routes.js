@@ -52,8 +52,7 @@ router.post('/gist', async (req, res, next) => {
         }
         res.status(result.status).json({ message: 'Could not create gist' });
     } catch (error) {
-        // TODO: improve return
-        return res.status(403).json({ message: '' });
+        return res.status(500).json({ message: 'Something went wrong' });
     }
 });
 
